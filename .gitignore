@@ -1,0 +1,5 @@
+/Excel去重工具.spec
+.idea
+/.venv/
+/build/
+/dist/

@@ -1,0 +1,25 @@
+.
+|-- README.md
+|-- Repository
+|   |-- Assets
+|   |   |-- default_bg.jpg
+|   |   |-- default_bg_1.jpg
+|   |   |-- default_bg_2.jpg
+|   |   `-- default_bg_3.jpg
+|   `-- data
+|-- main.py
+|-- src
+|   |-- UI
+|   |   `-- ui_main.py
+|   `-- backendCode
+|       |-- database
+|       |   |-- app_constants.py
+|       |   `-- settings_app.py
+|       |-- handlers
+|       |   |-- main_handlers.py
+|       |   `-- main_tasks.py
+|       `-- utils
+|           `-- util_json.py
+`-- tree.txt
+
+9 directories, 13 files
