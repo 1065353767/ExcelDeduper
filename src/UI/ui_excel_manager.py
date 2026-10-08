@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QPushButton,
                                QSpacerItem, QSizePolicy, QListWidget,
-                               QWidget, QLabel, QListWidgetItem)
+                               QWidget, QLabel, QListWidgetItem, QDialog, QLineEdit)
 
 
 class Ui_ExcelManagerDialog(object):
@@ -26,33 +26,56 @@ class Ui_ExcelManagerDialog(object):
         self.main_layout.addWidget(self.list_excel)
 
     def draw_excel_item(self, file_name):
-        """
-        新增：只负责“画”出带有【解析】按钮的一行，并将按钮移交控制层绑定
-        """
-        # 1. 生成一个空的占位 Item
+        """只负责“画”出带有【解析】按钮的一行，并将按钮移交控制层绑定"""
         item = QListWidgetItem(self.list_excel)
 
-        # 2. 画一个水平布局的行容器
         row_widget = QWidget()
         row_layout = QHBoxLayout(row_widget)
-        row_layout.setContentsMargins(5, 2, 5, 2)  # 把上下边距缩小一点，让列表紧凑
+        row_layout.setContentsMargins(5, 2, 5, 2)
 
-        # 3. 左侧画：文件名
         lbl_name = QLabel(file_name)
         row_layout.addWidget(lbl_name)
 
-        # 4. 中间画：弹簧（把按钮挤到最右边）
         spacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         row_layout.addItem(spacer)
 
-        # 5. 右侧画：解析按钮
         btn_parse = QPushButton("解析")
         btn_parse.setFixedSize(60, 26)
         row_layout.addWidget(btn_parse)
 
-        # 6. 把画好的行容器镶嵌进列表的空 Item 里
         item.setSizeHint(row_widget.sizeHint())
         self.list_excel.setItemWidget(item, row_widget)
 
-        # 7. 核心：把画好的按钮扔给外部（控制层）去绑定事件
         return btn_parse
+
+
+class ColumnInputDialog(QDialog):
+    """新增：专门用于输入列号的弹窗 UI 类"""
+    def __init__(self, file_name, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("输入解析列")
+        self.resize(350, 160)
+
+        layout = QVBoxLayout(self)
+
+        self.lbl_tip = QLabel(f"当前文件: {file_name}\n请输入要解析的列字母 (支持多列，用逗号隔开，例如: a,b)：")
+        layout.addWidget(self.lbl_tip)
+
+        self.input_cols = QLineEdit(self)
+        self.input_cols.setPlaceholderText("例如: a,b")
+        layout.addWidget(self.input_cols)
+
+        btn_layout = QHBoxLayout()
+        self.btn_ok = QPushButton("确定", self)
+        self.btn_cancel = QPushButton("取消", self)
+        btn_layout.addWidget(self.btn_ok)
+        btn_layout.addWidget(self.btn_cancel)
+        layout.addLayout(btn_layout)
+
+        # 信号槽绑定
+        self.btn_ok.clicked.connect(self.accept)
+        self.btn_cancel.clicked.connect(self.reject)
+
+    def get_column_input(self):
+        """获取用户输入的列号字符串"""
+        return self.input_cols.text().strip()
