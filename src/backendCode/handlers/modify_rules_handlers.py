@@ -1,6 +1,5 @@
 import json
-import os
-from PySide6.QtWidgets import QDialog, QFileDialog, QMessageBox, QTableWidgetItem
+from PySide6.QtWidgets import QFileDialog, QMessageBox, QTableWidgetItem
 from src.UI.ui_modify_rules import ModifyRulesDialog
 from src.backendCode.database.db_excel import ExcelDatabase
 
@@ -43,23 +42,24 @@ class ModifyRulesHandler:
             with open(file_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
 
-            # 兼容读取增加和删除部分
-            # 预期 JSON 结构示例: {"add": ["公司A", "公司B"], "del": ["公司C"]}
-            add_list = data.get("add", [])
-            del_list = data.get("del", [])
-
-            if not add_list and not del_list:
-                QMessageBox.warning(self.dialog, "提示", "JSON 文件中未检测到有效的 'add' 或 'del' 数据段！")
+            if not isinstance(data, dict):
+                QMessageBox.warning(self.dialog, "提示", "JSON 文件格式错误，根节点必须是一个字典对象！")
                 return
 
-            # 调用底层应用规则
-            added_count, deleted_count = ExcelDatabase.apply_json_rules(add_list, del_list)
+            # 直接传入完整的规则字典
+            added, modified, deleted = ExcelDatabase.apply_json_rules(data)
 
             QMessageBox.information(
                 self.dialog,
                 "规则应用成功",
-                f"JSON 规则执行完毕：\n- 成功增加词条：{added_count} 条\n- 成功删除词条：{deleted_count} 条"
+                f"高级 JSON 规则执行完毕：\n"
+                f"- 成功新增条数：{added}\n"
+                f"- 成功修改条数：{modified}\n"
+                f"- 成功删除条数：{deleted}"
             )
+
+            # 刷新表格
+            self.load_parsed_files()
 
         except Exception as e:
             QMessageBox.critical(self.dialog, "错误", f"解析或应用 JSON 规则失败:\n{str(e)}")

@@ -13,7 +13,7 @@ class ExcelDatabase:
 
     @classmethod
     def save_company_cache(cls, file_name, names):
-        """保存并自动记录解析时间（采用安全建表/重建策略，避开 SQLite 的 ALTER TABLE 限制）"""
+        """保存并自动记录解析时间"""
         db_path = cls._get_db_path()
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
@@ -89,13 +89,16 @@ class ExcelDatabase:
         return results
 
     @classmethod
-    def apply_json_rules(cls, add_list, del_list):
-        """根据 JSON 中的增加和删除规则更新数据库"""
+    def apply_json_rules(cls, rules_dict):
+        """
+        根据高级规则字典（包含 add/modify 和 精确/通配 del）更新数据库
+        """
         db_path = cls._get_db_path()
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 
         added_count = 0
+        modified_count = 0
         deleted_count = 0
 
         cursor.execute("""
@@ -117,33 +120,65 @@ class ExcelDatabase:
                        )
                        """)
 
-        if add_list:
-            for name in add_list:
-                clean_name = str(name).strip().lower()
-                if clean_name:
-                    cursor.execute("SELECT 1 FROM company_master WHERE name = ? LIMIT 1;", (clean_name,))
+        # 1. 处理 add / modify 部分
+        add_data = rules_dict.get("add", {})
+        for k, v in add_data.items():
+            k_clean = str(k).strip().lower()
+            v_clean = str(v).strip().lower()
+
+            if not k_clean:
+                continue
+
+            if not v_clean:
+                # 纯新增
+                cursor.execute("SELECT 1 FROM company_master WHERE name = ? LIMIT 1;", (k_clean,))
+                if not cursor.fetchone():
+                    cursor.execute("""
+                                   INSERT INTO company_master (name, source_file, parsed_at)
+                                   VALUES (?, 'JSON规则新增', DATETIME('now', 'localtime'))
+                                   """, (k_clean,))
+                    added_count += 1
+            else:
+                # 修改：把旧的 k_clean 更新为 v_clean
+                cursor.execute("SELECT id FROM company_master WHERE name = ?;", (k_clean,))
+                if cursor.fetchall():
+                    cursor.execute("UPDATE company_master SET name = ? WHERE name = ?;", (v_clean, k_clean))
+                    modified_count += cursor.rowcount
+                else:
+                    # 如果原本不存在，直接作为新条目插入
+                    cursor.execute("SELECT 1 FROM company_master WHERE name = ? LIMIT 1;", (v_clean,))
                     if not cursor.fetchone():
                         cursor.execute("""
                                        INSERT INTO company_master (name, source_file, parsed_at)
-                                       VALUES (?, 'JSON规则导入', DATETIME('now', 'localtime'))
-                                       """, (clean_name,))
+                                       VALUES (?, 'JSON规则新增', DATETIME('now', 'localtime'))
+                                       """, (v_clean,))
                         added_count += 1
 
-        if del_list:
-            for name in del_list:
-                clean_name = str(name).strip().lower()
-                if clean_name:
-                    cursor.execute("DELETE FROM company_master WHERE name = ?;", (clean_name,))
+        # 2. 处理 del 部分（支持精确删除与通配模糊删除）
+        del_data = rules_dict.get("del", {})
+        for k, v in del_data.items():
+            k_clean = str(k).strip().lower()
+            v_clean = str(v).strip().lower()
+
+            if v_clean:
+                # 后面有值，忽略前面，使用通配规则批量删除
+                pattern = f"%{v_clean}%"
+                cursor.execute("DELETE FROM company_master WHERE name LIKE ?;", (pattern,))
+                deleted_count += cursor.rowcount
+            else:
+                # 后面为空，前面写要删除的条目（精确删除）
+                if k_clean:
+                    cursor.execute("DELETE FROM company_master WHERE name = ?;", (k_clean,))
                     deleted_count += cursor.rowcount
 
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_company_name ON company_master(name);")
         conn.commit()
         conn.close()
-        return added_count, deleted_count
+        return added_count, modified_count, deleted_count
 
     @classmethod
     def deduplicate_database(cls):
-        """全局数据库去重：多次导入造成的重复数据只留一条"""
+        """全局数据库去重"""
         db_path = cls._get_db_path()
         if not os.path.exists(db_path):
             return 0
@@ -171,10 +206,6 @@ class ExcelDatabase:
 
     @classmethod
     def check_company_exists(cls, query_name):
-        """验证某个公司名称是否在本地数据库中"""
-        """
-        验证某个公司名称是否在本地数据库中（精确匹配）
-        """
         db_path = cls._get_db_path()
         if not os.path.exists(db_path):
             return False

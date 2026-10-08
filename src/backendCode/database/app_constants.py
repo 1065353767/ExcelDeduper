@@ -19,9 +19,32 @@ class AppConstants:
     ASSETS_DIR = os.path.join(REPO_DIR, "Assets")
     EXCEL_DIR = os.path.join(BASE_DIR, "Repository", "Excel")
 
-    # 根据你的要求，更名为 settings_app.json
     APP_SETTINGS_PATH = os.path.join(DATA_DIR, "settings_app.json")
     EXCEL_RULES_PATH = os.path.join(DATA_DIR, "excel_rules.json")
 
     # 定时器巡检间隔时间（毫秒），60000 = 1分钟
     SYNC_INTERVAL_MS = 60000
+
+    # 修改规则的 JSON 模板示例
+    DEFAULT_RULES_EXAMPLE = {
+        "eg": {
+            "说明：": (
+                "新增和修改：新增在 add 里前面写无符号全小写公司名，后面置空；"
+                "修改前面写要修改的条目，后面写修改后的内容。"
+                "删除：在前面写要删除的条目并且后面置空（精确删除）。"
+                "后面有值的会忽略前面，然后使用通配规则批量删除（模糊匹配）。"
+            )
+        },
+        "add": {
+            # 新增
+            "shili1": "",
+            # 修改（把 shili2 改为 xiugaihoumingcheng）
+            "shili2": "xiugaihoumingcheng"
+        },
+        "del": {
+            # 精确删除
+            "shili3": "",
+            # 通配规则批量删除（只要公司名包含该字符串即被删除）
+            "shili4": "批量删除规则"
+        }
+    }
