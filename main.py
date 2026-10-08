@@ -16,10 +16,10 @@ if __name__ == "__main__":
     # 2. 将管家的兜底保存绑定到程序的退出信号上（关闭保存）
     app.aboutToQuit.connect(app_settings.save_on_exit)
 
-    # 实例化窗口对象
+    # 2. 实例化主界面窗口
     window = ExcelDeduper()
 
-    # 3. 将窗口对象和配置管家一并丢给 Handler，完成依赖注入
+    # 3. 实例化主事件控制器，完成依赖注入
     handler = MainHandlers(window, app_settings)
 
     window.show()
