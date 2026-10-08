@@ -3,6 +3,7 @@ import shutil
 from PySide6.QtWidgets import QInputDialog, QMessageBox
 from src.backendCode.database.app_constants import AppConstants
 from src.backendCode.handlers.excel_manager_handlers import ExcelManagerHandler
+from src.backendCode.handlers.modify_rules_handlers import ModifyRulesHandler  # 引入修改规则 Handler
 
 
 class MainHandlers:
@@ -24,8 +25,9 @@ class MainHandlers:
         self.ui.btn_change_bg.clicked.connect(self.change_background)
 
     def modify_rules(self):
-        """修改规则按钮点击逻辑"""
-        QMessageBox.information(self.ui, "提示", "修改规则功能正在接入中...")
+        """修改规则按钮点击逻辑：唤起修改规则与数据管理弹窗"""
+        dialog_handler = ModifyRulesHandler(self.ui)
+        dialog_handler.exec()
 
     def manage_files(self):
         """管理文件按钮点击逻辑：唤起 Excel 管理弹窗"""
