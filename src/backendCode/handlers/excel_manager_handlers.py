@@ -1,8 +1,10 @@
 import os
 import shutil
+import pandas as pd
 from PySide6.QtWidgets import QDialog, QFileDialog, QMessageBox
 from src.UI.ui_excel_manager import Ui_ExcelManagerDialog
 from src.backendCode.database.app_constants import AppConstants
+from src.backendCode.database.db_excel import ExcelDatabase  # 引入底层的数据库操作类
 
 
 class ExcelManagerHandler(QDialog):
@@ -36,10 +38,31 @@ class ExcelManagerHandler(QDialog):
 
     def parse_excel(self, file_name):
         """
-        点击解析按钮的具体执行逻辑
+        点击解析按钮：由 handler 统筹，调用 pandas 读取并通过 database 层入库
         """
-        QMessageBox.information(self, "解析测试", f"准备解析文件：\n{file_name}")
-        pass
+        excel_path = os.path.join(AppConstants.EXCEL_DIR, file_name)
+
+        try:
+            df = pd.read_excel(excel_path)
+            if df.empty:
+                QMessageBox.warning(self, "警告", "选中的 Excel 文件内容为空！")
+                return
+
+            # 取第一列作为公司名称比对字段
+            target_column = df.columns[0]
+            names = df[target_column].dropna().astype(str).str.strip().unique()
+
+            # 调用底层 database 模块完成入库与索引建立
+            ExcelDatabase.save_company_cache(file_name, names)
+
+            QMessageBox.information(
+                self,
+                "解析成功",
+                f"成功将文件 [{file_name}] 中的 {len(names)} 条公司名称存入本地数据库！"
+            )
+
+        except Exception as e:
+            QMessageBox.critical(self, "解析错误", f"解析 Excel 失败: {str(e)}")
 
     def upload_excel(self):
         # 拿到绝对路径并确保目录存在
@@ -48,10 +71,7 @@ class ExcelManagerHandler(QDialog):
 
         # 唤起系统选择框，默认定位到 target_dir
         files, _ = QFileDialog.getOpenFileNames(
-            self,
-            "选择要导入的 Excel 文件",
-            target_dir,
-            "Excel Files (*.xlsx *.xls)"
+            self, "选择要导入的 Excel 文件", target_dir, "Excel Files (*.xlsx *.xls)"
         )
 
         if not files:

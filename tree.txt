@@ -6,7 +6,10 @@
 |   |   |-- default_bg.jpg
 |   |   |-- default_bg_1.jpg
 |   |   |-- default_bg_2.jpg
-|   |   `-- default_bg_3.jpg
+|   |   |-- default_bg_3.jpg
+|   |   `-- default_bg_4.jpg
+|   |-- Excel
+|   |   `-- \322\321\277\252\267\242\264\372\300\355.xlsx
 |   `-- data
 |       `-- settings_app.json
 |-- main.py
@@ -20,10 +23,11 @@
 |       |   `-- settings_app.py
 |       |-- handlers
 |       |   |-- excel_manager_handlers.py
-|       |   |-- main_handlers.py
-|       |   `-- main_tasks.py
+|       |   `-- main_handlers.py
+|       |-- tasks
+|       |   `-- task_excel.py
 |       `-- utils
 |           `-- util_json.py
 `-- tree.txt
 
-9 directories, 17 files
+11 directories, 19 files
