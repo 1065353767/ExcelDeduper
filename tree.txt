@@ -1,4 +1,5 @@
 .
+|-- Excel\310\245\326\330\271\244\276\337.spec
 |-- README.md
 |-- Repository
 |   |-- Assets
@@ -7,19 +8,22 @@
 |   |   |-- default_bg_2.jpg
 |   |   `-- default_bg_3.jpg
 |   `-- data
+|       `-- settings_app.json
 |-- main.py
 |-- src
 |   |-- UI
+|   |   |-- ui_excel_manager.py
 |   |   `-- ui_main.py
 |   `-- backendCode
 |       |-- database
 |       |   |-- app_constants.py
 |       |   `-- settings_app.py
 |       |-- handlers
+|       |   |-- excel_manager_handlers.py
 |       |   |-- main_handlers.py
 |       |   `-- main_tasks.py
 |       `-- utils
 |           `-- util_json.py
 `-- tree.txt
 
-9 directories, 13 files
+9 directories, 17 files

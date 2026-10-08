@@ -17,6 +17,7 @@ class AppConstants:
     REPO_DIR = os.path.join(BASE_DIR, "Repository")
     DATA_DIR = os.path.join(REPO_DIR, "data")
     ASSETS_DIR = os.path.join(REPO_DIR, "Assets")
+    EXCEL_DIR = os.path.join(BASE_DIR, "Repository", "Excel")
 
     # 根据你的要求，更名为 settings_app.json
     APP_SETTINGS_PATH = os.path.join(DATA_DIR, "settings_app.json")

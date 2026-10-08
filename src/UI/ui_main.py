@@ -15,7 +15,7 @@ class ExcelDeduper(QMainWindow):
         self.btn_modify_rules = QPushButton("修改规则", self)
         self.btn_modify_rules.setFixedSize(100, 35)
 
-        # 【已修复】将 btn_download 改为了 btn_manage_files
+        # 实例化“管理文件”按钮
         self.btn_manage_files = QPushButton("管理文件", self)
         self.btn_manage_files.setFixedSize(100, 35)
 
