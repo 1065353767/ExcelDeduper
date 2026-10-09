@@ -11,23 +11,27 @@
 |   |-- Excel
 |   |   `-- \322\321\277\252\267\242\264\372\300\355.xlsx
 |   `-- data
+|       |-- company_cache.db
 |       `-- settings_app.json
 |-- main.py
 |-- src
 |   |-- UI
 |   |   |-- ui_excel_manager.py
-|   |   `-- ui_main.py
+|   |   |-- ui_main.py
+|   |   `-- ui_modify_rules.py
 |   `-- backendCode
 |       |-- database
 |       |   |-- app_constants.py
+|       |   |-- db_excel.py
 |       |   `-- settings_app.py
 |       |-- handlers
 |       |   |-- excel_manager_handlers.py
-|       |   `-- main_handlers.py
+|       |   |-- main_handlers.py
+|       |   `-- modify_rules_handlers.py
 |       |-- tasks
 |       |   `-- task_excel.py
 |       `-- utils
 |           `-- util_json.py
 `-- tree.txt
 
-11 directories, 19 files
+11 directories, 23 files

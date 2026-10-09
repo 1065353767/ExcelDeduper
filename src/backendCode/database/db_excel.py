@@ -205,10 +205,17 @@ class ExcelDatabase:
         return deleted_rows
 
     @classmethod
-    def check_company_exists(cls, query_name):
+    def find_matching_companies(cls, query_name):
+        """
+        执行双向包含查询：
+        1. 数据库中的公司名包含剪贴板文本
+        2. 剪贴板文本包含数据库中的公司名
+        并在内存中通过 AppConstants.MATCH_LENGTH_TOLERANCE 进行宽容值筛选
+        返回所有命中的公司名列表
+        """
         db_path = cls._get_db_path()
         if not os.path.exists(db_path):
-            return False
+            return []
 
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
@@ -216,10 +223,32 @@ class ExcelDatabase:
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='company_master';")
         if not cursor.fetchone():
             conn.close()
-            return False
+            return []
 
-        cursor.execute("SELECT 1 FROM company_master WHERE name = ? LIMIT 1;", (query_name.strip().lower(),))
-        result = cursor.fetchone()
+        query_clean = query_name.strip().lower()
+        pattern = f"%{query_clean}%"
 
+        cursor.execute("""
+                       SELECT DISTINCT name
+                       FROM company_master
+                       WHERE name LIKE ?
+                          OR ? LIKE '%' || name || '%'
+                       """, (pattern, query_clean))
+
+        # 先把所有通过包含关系查出来的结果拿出来
+        raw_results = [row[0] for row in cursor.fetchall()]
         conn.close()
-        return result is not None
+
+        # ================= 新增：内存筛选逻辑 =================
+        filtered_results = []
+        tolerance = AppConstants.MATCH_LENGTH_TOLERANCE
+
+        for db_name in raw_results:
+            # 计算数据库名称与剪贴板名称的长度差的绝对值
+            length_diff = abs(len(db_name) - len(query_clean))
+
+            # 只有长度差值小于等于宽容值，才被视为有效命中
+            if length_diff <= tolerance:
+                filtered_results.append(db_name)
+
+        return filtered_results
