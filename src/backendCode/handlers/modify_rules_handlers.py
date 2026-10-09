@@ -1,7 +1,10 @@
+import os
 import json
 from PySide6.QtWidgets import QFileDialog, QMessageBox, QTableWidgetItem
 from src.UI.ui_modify_rules import ModifyRulesDialog
 from src.backendCode.database.db_excel import ExcelDatabase
+from src.backendCode.database.app_constants import AppConstants
+from src.backendCode.utils.util_json import dict2json, json2dict  # 引入现有的 utils 方法
 
 
 class ModifyRulesHandler:
@@ -11,42 +14,36 @@ class ModifyRulesHandler:
         # 绑定按钮事件
         self.dialog.btn_upload_json.clicked.connect(self.upload_json_rules)
         self.dialog.btn_deduplicate.clicked.connect(self.run_deduplication)
+        self.dialog.btn_download_template.clicked.connect(self.download_template)  # 绑定下载模板
 
-        # 初始化时加载已解析的文件表格
         self.load_parsed_files()
 
     def load_parsed_files(self):
-        """加载数据库中记录的已解析文件和时间到表格中"""
         files_info = ExcelDatabase.get_parsed_files_info()
-
         table = self.dialog.table_files
         table.setRowCount(len(files_info))
 
         for row_idx, (file_name, parse_time) in enumerate(files_info):
             item_name = QTableWidgetItem(str(file_name))
             item_time = QTableWidgetItem(str(parse_time))
-
             table.setItem(row_idx, 0, item_name)
             table.setItem(row_idx, 1, item_time)
 
     def upload_json_rules(self):
-        """上传 JSON 规则文件，支持【增加】与【删除】两部分"""
         file_path, _ = QFileDialog.getOpenFileName(
             self.dialog, "选择规则 JSON 文件", "", "JSON Files (*.json)"
         )
-
         if not file_path:
             return
 
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
+            # 使用工具层的 json2dict 解析上传的规则文件
+            data = json2dict(file_path)
 
             if not isinstance(data, dict):
                 QMessageBox.warning(self.dialog, "提示", "JSON 文件格式错误，根节点必须是一个字典对象！")
                 return
 
-            # 直接传入完整的规则字典
             added, modified, deleted = ExcelDatabase.apply_json_rules(data)
 
             QMessageBox.information(
@@ -58,14 +55,32 @@ class ModifyRulesHandler:
                 f"- 成功删除条数：{deleted}"
             )
 
-            # 刷新表格
             self.load_parsed_files()
 
         except Exception as e:
             QMessageBox.critical(self.dialog, "错误", f"解析或应用 JSON 规则失败:\n{str(e)}")
 
+    def download_template(self):
+        """调用工具层的 dict2json，将固定规则模板保存到 Win10 桌面"""
+        try:
+            desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
+            if not os.path.exists(desktop_path):
+                desktop_path = os.path.expanduser("~")
+
+            file_path = os.path.join(desktop_path, "excel_rules_template.json")
+
+            # 使用现有的 dict2json 方法落盘
+            dict2json(AppConstants.DEFAULT_RULES_EXAMPLE, file_path)
+
+            QMessageBox.information(
+                self.dialog,
+                "下载成功",
+                f"规则模板已成功导出至您的 Win10 桌面：\n{file_path}"
+            )
+        except Exception as e:
+            QMessageBox.critical(self.dialog, "错误", f"下载模板失败:\n{str(e)}")
+
     def run_deduplication(self):
-        """一键操作数据库去重"""
         try:
             deleted_count = ExcelDatabase.deduplicate_database()
             QMessageBox.information(
@@ -77,5 +92,4 @@ class ModifyRulesHandler:
             QMessageBox.critical(self.dialog, "错误", f"去重操作失败:\n{str(e)}")
 
     def exec(self):
-        """显示弹窗"""
         return self.dialog.exec()
