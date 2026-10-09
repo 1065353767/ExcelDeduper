@@ -2,6 +2,7 @@ import os
 import sys
 from PySide6.QtWidgets import QMainWindow, QPushButton
 from PySide6.QtCore import Qt, Signal
+from src.backendCode.database.app_constants import AppConstants  # ================= 新增：引入常量类 =================
 
 
 class ExcelDeduper(QMainWindow):
@@ -11,9 +12,11 @@ class ExcelDeduper(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setObjectName("MainWindow")
-        self.setWindowTitle("Excel提示重复工具skyg Jackson.wuhan 出品，请勿传播")
 
-        # 移除原有的 self.resize(1280, 958)，改为统一由 Handler 从配置文件中读取赋值
+        # ================= 修改：动态拼接版本号到标题 =================
+        self.setWindowTitle(f"Excel提示重复工具 {AppConstants.APP_VERSION} - skyg Jackson.wuhan 出品，请勿传播")
+        # ==============================================================
+
         self.setMinimumSize(630, 430)
 
         # 实例化“修改规则”按钮
@@ -76,7 +79,6 @@ class ExcelDeduper(QMainWindow):
             int((self.height() - btn_h) / 2)
         )
 
-        # ================= 新增：向外发送最新长宽数据 =================
         self.window_resized_signal.emit(self.width(), self.height())
 
         super().resizeEvent(event)
