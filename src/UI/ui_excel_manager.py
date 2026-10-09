@@ -51,6 +51,7 @@ class Ui_ExcelManagerDialog(object):
 
 class ColumnInputDialog(QDialog):
     """新增：专门用于输入列号的弹窗 UI 类"""
+
     def __init__(self, file_name, parent=None):
         super().__init__(parent)
         self.setWindowTitle("输入解析列")

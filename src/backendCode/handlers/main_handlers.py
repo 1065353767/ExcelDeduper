@@ -1,15 +1,15 @@
 import os
 import shutil
-# ================= 修改：补充引入托盘与菜单相关模块 =================
+
+from PySide6.QtGui import QCursor, QAction, QIcon
 from PySide6.QtWidgets import QInputDialog, QMessageBox, QApplication, QSystemTrayIcon, QMenu, QStyle
-from PySide6.QtGui import QCursor, QAction
-# ====================================================================
+
+from src.UI.ui_toast import FloatingToast
 from src.backendCode.database.app_constants import AppConstants
+from src.backendCode.database.db_excel import ExcelDatabase
 from src.backendCode.handlers.excel_manager_handlers import ExcelManagerHandler
 from src.backendCode.handlers.modify_rules_handlers import ModifyRulesHandler
 from src.backendCode.tasks.task_excel import ExcelTask
-from src.backendCode.database.db_excel import ExcelDatabase
-from src.UI.ui_toast import FloatingToast
 
 
 class MainHandlers:
@@ -39,16 +39,23 @@ class MainHandlers:
 
         # ================= 新增：初始化系统托盘 =================
         self.setup_tray_icon()
-        # ========================================================
 
     # ================= 新增：托盘系统核心方法 =================
     def setup_tray_icon(self):
         """配置系统托盘小图标及右键菜单"""
         self.tray_icon = QSystemTrayIcon(self.ui)
 
-        # 使用 PySide6 系统内置的电脑图标作为托盘图标，避免打包后找不到图片报错
-        icon = self.ui.style().standardIcon(QStyle.StandardPixmap.SP_ComputerIcon)
-        self.tray_icon.setIcon(icon)
+        # 挂载 skypng.png 为动态图标
+        icon_path = os.path.join(AppConstants.ASSETS_DIR, "skypng.png")
+        if os.path.exists(icon_path):
+            custom_icon = QIcon(icon_path)
+            self.tray_icon.setIcon(custom_icon)
+            self.ui.setWindowIcon(custom_icon)
+        else:
+            fallback_icon = self.ui.style().standardIcon(QStyle.StandardPixmap.SP_ComputerIcon)
+            self.tray_icon.setIcon(fallback_icon)
+            self.ui.setWindowIcon(fallback_icon)
+
         self.tray_icon.setToolTip(f"Excel去重工具 {AppConstants.APP_VERSION}")
 
         # 创建右键菜单

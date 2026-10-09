@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QPushButton,
-                               QTableWidget, QTableWidgetItem, QDialog, QHeaderView, QLabel, QSpacerItem, QSizePolicy)
+                               QTableWidget, QDialog, QHeaderView, QLabel, QSpacerItem, QSizePolicy)
 
 
 class Ui_ModifyRulesDialog(object):

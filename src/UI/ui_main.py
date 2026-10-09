@@ -1,7 +1,9 @@
 import os
 import sys
+
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QMainWindow, QPushButton
-from PySide6.QtCore import Qt, Signal
+
 from src.backendCode.database.app_constants import AppConstants
 
 

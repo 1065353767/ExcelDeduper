@@ -1,9 +1,11 @@
 import sys
-from PySide6.QtWidgets import QApplication
+
 from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QApplication
+
 from src.UI.ui_main import ExcelDeduper
-from src.backendCode.handlers.main_handlers import MainHandlers
 from src.backendCode.database.settings_app import SettingsManager
+from src.backendCode.handlers.main_handlers import MainHandlers
 
 if __name__ == "__main__":
     QApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)

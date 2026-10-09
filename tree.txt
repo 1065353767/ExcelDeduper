@@ -7,32 +7,39 @@
 |   |   |-- default_bg_1.jpg
 |   |   |-- default_bg_2.jpg
 |   |   |-- default_bg_3.jpg
-|   |   `-- default_bg_4.jpg
+|   |   |-- default_bg_4.jpg
+|   |   |-- skyico.ico
+|   |   `-- skypng.png
 |   |-- Excel
-|   |   `-- \322\321\277\252\267\242\264\372\300\355.xlsx
 |   `-- data
-|       |-- company_cache.db
 |       `-- settings_app.json
 |-- main.py
 |-- src
 |   |-- UI
+|   |   |-- __init__.py
 |   |   |-- ui_excel_manager.py
 |   |   |-- ui_main.py
 |   |   |-- ui_modify_rules.py
 |   |   `-- ui_toast.py
+|   |-- __init__.py
 |   `-- backendCode
+|       |-- __init__.py
 |       |-- database
+|       |   |-- __init__.py
 |       |   |-- app_constants.py
 |       |   |-- db_excel.py
 |       |   `-- settings_app.py
 |       |-- handlers
+|       |   |-- __init__.py
 |       |   |-- excel_manager_handlers.py
 |       |   |-- main_handlers.py
 |       |   `-- modify_rules_handlers.py
 |       |-- tasks
+|       |   |-- __init__.py
 |       |   `-- task_excel.py
 |       `-- utils
+|           |-- __init__.py
 |           `-- util_json.py
 `-- tree.txt
 
-11 directories, 24 files
+11 directories, 31 files

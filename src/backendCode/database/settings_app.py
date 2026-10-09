@@ -1,9 +1,10 @@
 import os
 from dataclasses import dataclass, asdict
+
 from PySide6.QtCore import QTimer, QObject
 
-from src.backendCode.utils.util_json import json2dict, dict2json
 from src.backendCode.database.app_constants import AppConstants
+from src.backendCode.utils.util_json import json2dict, dict2json
 
 
 # 1. 纯粹的数据结构 Bean，仅管理字段

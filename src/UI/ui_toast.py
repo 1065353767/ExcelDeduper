@@ -1,5 +1,6 @@
-from PySide6.QtWidgets import QLabel, QWidget, QVBoxLayout
 from PySide6.QtCore import Qt, QTimer
+from PySide6.QtWidgets import QLabel, QWidget, QVBoxLayout
+
 from src.backendCode.database.app_constants import AppConstants
 
 
