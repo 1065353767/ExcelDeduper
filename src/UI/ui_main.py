@@ -1,16 +1,19 @@
 import os
 import sys
 from PySide6.QtWidgets import QMainWindow, QPushButton
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 
 
 class ExcelDeduper(QMainWindow):
+    # ================= 新增：自定义信号，用于向上层传递尺寸变化 =================
+    window_resized_signal = Signal(int, int)
+
     def __init__(self):
         super().__init__()
         self.setObjectName("MainWindow")
         self.setWindowTitle("Excel提示重复工具skyg Jackson.wuhan 出品，请勿传播")
 
-        self.resize(1280, 958)
+        # 移除原有的 self.resize(1280, 958)，改为统一由 Handler 从配置文件中读取赋值
         self.setMinimumSize(630, 430)
 
         # 实例化“修改规则”按钮
@@ -25,9 +28,8 @@ class ExcelDeduper(QMainWindow):
         self.btn_change_bg = QPushButton("更换背景", self)
         self.btn_change_bg.setFixedSize(100, 35)
 
-        # 新增：实例化中心的大按钮（默认处于暂停状态）
+        # 实例化中心的大按钮（默认处于暂停状态）
         self.btn_toggle_monitor = QPushButton("已暂停", self)
-        # 默认样式：红色边框
         self.btn_toggle_monitor.setStyleSheet("""
             QPushButton {
                 border: 3px solid red; 
@@ -42,7 +44,7 @@ class ExcelDeduper(QMainWindow):
         self.load_background()
 
     def load_background(self, target_name="default_bg.jpg"):
-        """加载背景图，默认寻找被覆盖生成的 default_bg.jpg"""
+        """加载背景图"""
         if getattr(sys, 'frozen', False):
             base_path = os.path.dirname(sys.executable)
         else:
@@ -61,20 +63,20 @@ class ExcelDeduper(QMainWindow):
 
     def resizeEvent(self, event):
         """重写窗口拉伸事件：强制保持按钮在右上角绝对位置及中央按钮尺寸居中"""
-        # 右上角功能按钮位置计算
         self.btn_modify_rules.move(self.width() - 340, 20)
         self.btn_manage_files.move(self.width() - 230, 20)
         self.btn_change_bg.move(self.width() - 120, 20)
 
-        # 中间大按钮大小计算：宽1/2，高1/3
         btn_w = int(self.width() * 0.5)
         btn_h = int(self.height() * 0.33)
         self.btn_toggle_monitor.setFixedSize(btn_w, btn_h)
 
-        # 绝对居中定位
         self.btn_toggle_monitor.move(
             int((self.width() - btn_w) / 2),
             int((self.height() - btn_h) / 2)
         )
+
+        # ================= 新增：向外发送最新长宽数据 =================
+        self.window_resized_signal.emit(self.width(), self.height())
 
         super().resizeEvent(event)

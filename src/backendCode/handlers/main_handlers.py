@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QInputDialog, QMessageBox, QApplication
 from PySide6.QtGui import QCursor
 from src.backendCode.database.app_constants import AppConstants
 from src.backendCode.handlers.excel_manager_handlers import ExcelManagerHandler
-from src.backendCode.handlers.modify_rules_handlers import ModifyRulesHandler  # 引入修改规则 Handler
+from src.backendCode.handlers.modify_rules_handlers import ModifyRulesHandler
 from src.backendCode.tasks.task_excel import ExcelTask
 from src.backendCode.database.db_excel import ExcelDatabase
 from src.UI.ui_toast import FloatingToast
@@ -15,9 +15,13 @@ class MainHandlers:
         self.ui = ui_window
         self.app_settings = app_settings
 
+        # ================= 新增：启动时加载 json 中的窗口宽高 =================
+        self.ui.resize(self.app_settings.data.window_width, self.app_settings.data.window_height)
+        # ====================================================================
+
         # 监控状态锁
         self.is_monitoring = False
-        self.current_toast = None  # 持有悬浮窗的引用，防止被垃圾回收
+        self.current_toast = None
 
         # 背景字典映射
         self.bg_dict = {
@@ -31,12 +35,18 @@ class MainHandlers:
         self.ui.btn_modify_rules.clicked.connect(self.modify_rules)
         self.ui.btn_manage_files.clicked.connect(self.manage_files)
         self.ui.btn_change_bg.clicked.connect(self.change_background)
-
-        # 绑定中间大按钮切换事件
         self.ui.btn_toggle_monitor.clicked.connect(self.toggle_monitor)
 
         # 绑定剪贴板变化信号
         QApplication.clipboard().dataChanged.connect(self.on_clipboard_changed)
+
+        # ================= 新增：监听窗口拉伸信号 =================
+        self.ui.window_resized_signal.connect(self.on_window_resized)
+
+    def on_window_resized(self, w, h):
+        """窗口拉伸时触发：只更新内存中的数据实体（由管家负责定时/退出时兜底落盘，杜绝高频 I/O 阻塞卡顿）"""
+        self.app_settings.data.window_width = w
+        self.app_settings.data.window_height = h
 
     def toggle_monitor(self):
         """中间大按钮点击：翻转监控状态及UI"""
@@ -67,8 +77,6 @@ class MainHandlers:
                 }
             """)
 
-        # === 替换 main_handlers.py 里面的 on_clipboard_changed 方法 ===
-
     def on_clipboard_changed(self):
         """剪贴板内容变更时的触发动作"""
         if not self.is_monitoring:
@@ -90,18 +98,14 @@ class MainHandlers:
 
         if is_exist:
             match_str_list = []
-            display_clean_text = clean_text  # 用于展示的剪贴板内容
+            display_clean_text = clean_text
 
             for m in matches[:10]:
                 if clean_text in m:
-                    # 库里的词比剪贴板长，把库数据中被剪贴板包含的部分标红
                     h_m = m.replace(clean_text, f"<font color='red'>{clean_text}</font>")
-                    # 剪贴板全词命中，剪贴板展示区全红
                     display_clean_text = f"<font color='red'>{clean_text}</font>"
                 elif m in clean_text:
-                    # 剪贴板的词比库里长，库里的词就是相同部分，全标红
                     h_m = f"<font color='red'>{m}</font>"
-                    # 顺便把剪贴板展示文字里相同的部分也标红（防冲突校验）
                     if "<font" not in display_clean_text:
                         display_clean_text = display_clean_text.replace(m, f"<font color='red'>{m}</font>")
                 else:
@@ -113,7 +117,6 @@ class MainHandlers:
             if len(matches) > 10:
                 match_str += f"<br>...等共计 {len(matches)} 项命中"
 
-            # HTML 模式下必须使用 <br> 替代 \n
             display_text = f"【已开发】<br>您复制: {display_clean_text}<br>命中列表:<br>{match_str}"
         else:
             display_text = f"【未开发】<br>您复制: {clean_text}"
@@ -128,20 +131,16 @@ class MainHandlers:
         self.current_toast.show()
 
     def modify_rules(self):
-        """修改规则按钮点击逻辑：唤起修改规则与数据管理弹窗"""
         dialog_handler = ModifyRulesHandler(self.ui)
         dialog_handler.exec()
 
     def manage_files(self):
-        """管理文件按钮点击逻辑：唤起 Excel 管理弹窗"""
         dialog = ExcelManagerHandler(self.ui)
         dialog.exec()
 
     def change_background(self):
-        """更换背景并即时持久化落盘"""
         items = list(self.bg_dict.keys())
 
-        # 读取当前配置中的背景名
         current_name = self.app_settings.data.current_bg_name
         current_index = items.index(current_name) if current_name in items else 0
 
@@ -150,7 +149,6 @@ class MainHandlers:
         )
 
         if ok and selected_name:
-            # 持久化更新
             self.app_settings.data.current_bg_name = selected_name
             self.app_settings.save_on_demand()
 
