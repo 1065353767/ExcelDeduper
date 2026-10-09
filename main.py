@@ -10,6 +10,10 @@ if __name__ == "__main__":
 
     app = QApplication(sys.argv)
 
+    # ================= 新增：防止主窗口隐藏后程序自动退出 =================
+    app.setQuitOnLastWindowClosed(False)
+    # ====================================================================
+
     # 1. 实例化顶层单例配置管家
     app_settings = SettingsManager()
 

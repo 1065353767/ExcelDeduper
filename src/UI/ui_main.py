@@ -2,20 +2,21 @@ import os
 import sys
 from PySide6.QtWidgets import QMainWindow, QPushButton
 from PySide6.QtCore import Qt, Signal
-from src.backendCode.database.app_constants import AppConstants  # ================= 新增：引入常量类 =================
+from src.backendCode.database.app_constants import AppConstants
 
 
 class ExcelDeduper(QMainWindow):
-    # ================= 新增：自定义信号，用于向上层传递尺寸变化 =================
     window_resized_signal = Signal(int, int)
 
     def __init__(self):
         super().__init__()
         self.setObjectName("MainWindow")
 
-        # ================= 修改：动态拼接版本号到标题 =================
+        # ================= 新增：真退出标志位 =================
+        self.real_quit = False
+        # ======================================================
+
         self.setWindowTitle(f"Excel提示重复工具 {AppConstants.APP_VERSION} - skyg Jackson.wuhan 出品，请勿传播")
-        # ==============================================================
 
         self.setMinimumSize(630, 430)
 
@@ -31,7 +32,7 @@ class ExcelDeduper(QMainWindow):
         self.btn_change_bg = QPushButton("更换背景", self)
         self.btn_change_bg.setFixedSize(100, 35)
 
-        # 实例化中心的大按钮（默认处于暂停状态）
+        # 实例化中心的大按钮
         self.btn_toggle_monitor = QPushButton("已暂停", self)
         self.btn_toggle_monitor.setStyleSheet("""
             QPushButton {
@@ -43,11 +44,21 @@ class ExcelDeduper(QMainWindow):
             }
         """)
 
-        # 首次启动加载背景
         self.load_background()
 
+    # ================= 新增：重写关闭事件 =================
+    def closeEvent(self, event):
+        if self.real_quit:
+            # 如果是真正的退出（托盘点击了退出），接收事件释放资源
+            event.accept()
+        else:
+            # 否则（点击了右上角的X），忽略关闭事件，并隐藏窗口
+            event.ignore()
+            self.hide()
+
+    # ======================================================
+
     def load_background(self, target_name="default_bg.jpg"):
-        """加载背景图"""
         if getattr(sys, 'frozen', False):
             base_path = os.path.dirname(sys.executable)
         else:
@@ -65,7 +76,6 @@ class ExcelDeduper(QMainWindow):
         """)
 
     def resizeEvent(self, event):
-        """重写窗口拉伸事件：强制保持按钮在右上角绝对位置及中央按钮尺寸居中"""
         self.btn_modify_rules.move(self.width() - 340, 20)
         self.btn_manage_files.move(self.width() - 230, 20)
         self.btn_change_bg.move(self.width() - 120, 20)
@@ -80,5 +90,4 @@ class ExcelDeduper(QMainWindow):
         )
 
         self.window_resized_signal.emit(self.width(), self.height())
-
         super().resizeEvent(event)

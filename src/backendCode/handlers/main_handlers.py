@@ -1,7 +1,9 @@
 import os
 import shutil
-from PySide6.QtWidgets import QInputDialog, QMessageBox, QApplication
-from PySide6.QtGui import QCursor
+# ================= 修改：补充引入托盘与菜单相关模块 =================
+from PySide6.QtWidgets import QInputDialog, QMessageBox, QApplication, QSystemTrayIcon, QMenu, QStyle
+from PySide6.QtGui import QCursor, QAction
+# ====================================================================
 from src.backendCode.database.app_constants import AppConstants
 from src.backendCode.handlers.excel_manager_handlers import ExcelManagerHandler
 from src.backendCode.handlers.modify_rules_handlers import ModifyRulesHandler
@@ -15,15 +17,11 @@ class MainHandlers:
         self.ui = ui_window
         self.app_settings = app_settings
 
-        # ================= 新增：启动时加载 json 中的窗口宽高 =================
         self.ui.resize(self.app_settings.data.window_width, self.app_settings.data.window_height)
-        # ====================================================================
 
-        # 监控状态锁
         self.is_monitoring = False
         self.current_toast = None
 
-        # 背景字典映射
         self.bg_dict = {
             "月色海滨": "default_bg_1.jpg",
             "米色麻布": "default_bg_2.jpg",
@@ -31,25 +29,72 @@ class MainHandlers:
             "梦幻小船": "default_bg_4.jpg"
         }
 
-        # 集中绑定所有主界面按钮事件
         self.ui.btn_modify_rules.clicked.connect(self.modify_rules)
         self.ui.btn_manage_files.clicked.connect(self.manage_files)
         self.ui.btn_change_bg.clicked.connect(self.change_background)
         self.ui.btn_toggle_monitor.clicked.connect(self.toggle_monitor)
 
-        # 绑定剪贴板变化信号
         QApplication.clipboard().dataChanged.connect(self.on_clipboard_changed)
-
-        # ================= 新增：监听窗口拉伸信号 =================
         self.ui.window_resized_signal.connect(self.on_window_resized)
 
+        # ================= 新增：初始化系统托盘 =================
+        self.setup_tray_icon()
+        # ========================================================
+
+    # ================= 新增：托盘系统核心方法 =================
+    def setup_tray_icon(self):
+        """配置系统托盘小图标及右键菜单"""
+        self.tray_icon = QSystemTrayIcon(self.ui)
+
+        # 使用 PySide6 系统内置的电脑图标作为托盘图标，避免打包后找不到图片报错
+        icon = self.ui.style().standardIcon(QStyle.StandardPixmap.SP_ComputerIcon)
+        self.tray_icon.setIcon(icon)
+        self.tray_icon.setToolTip(f"Excel去重工具 {AppConstants.APP_VERSION}")
+
+        # 创建右键菜单
+        tray_menu = QMenu()
+        show_action = QAction("显示主界面", self.ui)
+        quit_action = QAction("完全退出", self.ui)
+
+        show_action.triggered.connect(self.show_main_window)
+        quit_action.triggered.connect(self.quit_app)
+
+        tray_menu.addAction(show_action)
+        tray_menu.addSeparator()  # 加一条分割线更美观
+        tray_menu.addAction(quit_action)
+
+        self.tray_icon.setContextMenu(tray_menu)
+
+        # 绑定左键双击托盘图标恢复主窗口
+        self.tray_icon.activated.connect(self.on_tray_activated)
+
+        self.tray_icon.show()
+
+    def show_main_window(self):
+        """显示并激活主窗口"""
+        self.ui.show()
+        self.ui.activateWindow()
+
+    def quit_app(self):
+        """从托盘彻底退出程序"""
+        # 1. 改变 UI 的真退出标志位，放行 closeEvent
+        self.ui.real_quit = True
+        # 2. 调用 QApplication 的退出，它会自动触发 main.py 中的兜底保存配置
+        QApplication.quit()
+
+    def on_tray_activated(self, reason):
+        """托盘图标激活事件"""
+        # 如果是鼠标双击，则呼出主界面
+        if reason == QSystemTrayIcon.ActivationReason.DoubleClick:
+            self.show_main_window()
+
+    # ============================================================
+
     def on_window_resized(self, w, h):
-        """窗口拉伸时触发：只更新内存中的数据实体（由管家负责定时/退出时兜底落盘，杜绝高频 I/O 阻塞卡顿）"""
         self.app_settings.data.window_width = w
         self.app_settings.data.window_height = h
 
     def toggle_monitor(self):
-        """中间大按钮点击：翻转监控状态及UI"""
         self.is_monitoring = not self.is_monitoring
 
         if self.is_monitoring:
@@ -78,7 +123,6 @@ class MainHandlers:
             """)
 
     def on_clipboard_changed(self):
-        """剪贴板内容变更时的触发动作"""
         if not self.is_monitoring:
             return
 
