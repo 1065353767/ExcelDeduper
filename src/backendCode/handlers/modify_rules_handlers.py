@@ -1,6 +1,6 @@
 import os
-
 import copy
+
 from PySide6.QtCore import QStandardPaths
 from PySide6.QtWidgets import QFileDialog, QMessageBox, QTableWidgetItem
 
@@ -8,11 +8,10 @@ from src.UI.ui_modify_rules import ModifyRulesDialog
 from src.backendCode.database.app_constants import AppConstants
 from src.backendCode.database.db_excel import ExcelDatabase
 from src.backendCode.utils.util_json import dict2json, json2dict
-from src.backendCode.utils.settings_json import dispatch_json_data  # 引入新的分发工具
+from src.backendCode.utils.settings_json import dispatch_json_data
 
 
 class ModifyRulesHandler:
-    # 接收 main_handlers 传来的 app_settings
     def __init__(self, parent_ui=None, app_settings=None):
         self.dialog = ModifyRulesDialog(parent_ui)
         self.app_settings = app_settings
@@ -48,18 +47,34 @@ class ModifyRulesHandler:
                 QMessageBox.warning(self.dialog, "提示", "JSON 文件格式错误，根节点必须是一个字典对象！")
                 return
 
-            # 调用外部的分发工具，同时处理设置修改和数据库增删
-            added, modified, deleted = dispatch_json_data(data, self.app_settings)
+            # 接收 4 个返回值，包含配置是否变更的布尔值
+            added, modified, deleted, is_settings_changed = dispatch_json_data(data, self.app_settings)
 
-            QMessageBox.information(
-                self.dialog,
-                "应用成功",
-                f"高级 JSON 规则已执行完毕！\n"
-                f"- 成功新增条数：{added}\n"
-                f"- 成功修改条数：{modified}\n"
-                f"- 成功删除条数：{deleted}\n"
-                f"*(如果包含 Setting 节点，相关配置已生效)*"
-            )
+            # ================= 新增：动态拼接提示信息 =================
+            if added == 0 and modified == 0 and deleted == 0 and not is_settings_changed:
+                QMessageBox.information(
+                    self.dialog,
+                    "提示",
+                    "未检测到任何有效的数据修改或配置变更\n（已自动忽略默认模板示例内容）。"
+                )
+            else:
+                msg_lines = ["高级 JSON 规则已执行完毕！\n"]
+                if added > 0:
+                    msg_lines.append(f"- 成功新增条数：{added}")
+                if modified > 0:
+                    msg_lines.append(f"- 成功修改条数：{modified}")
+                if deleted > 0:
+                    msg_lines.append(f"- 成功删除条数：{deleted}")
+
+                if is_settings_changed:
+                    msg_lines.append("\n*(检测到 Setting 节点，相关配置已更新并生效)*")
+
+                QMessageBox.information(
+                    self.dialog,
+                    "应用成功",
+                    "\n".join(msg_lines)
+                )
+            # ==========================================================
 
             self.load_parsed_files()
 
@@ -81,14 +96,11 @@ class ModifyRulesHandler:
             if not file_path:
                 return
 
-            # ================= 新增：动态同步当前设置 =================
-            # 使用深拷贝保证不污染原始常量，同时维持原有字典的排序（eg在最上）
+            # 深拷贝并注入最新的设置值
             dynamic_template = copy.deepcopy(AppConstants.DEFAULT_RULES_EXAMPLE)
             dynamic_template["Setting"]["提示窗时间"] = self.app_settings.data.toast_duration_ms
             dynamic_template["Setting"]["赦免长度"] = self.app_settings.data.forgive_length
-            # ==========================================================
 
-            # 落盘时使用动态注入后的模板
             dict2json(dynamic_template, file_path)
 
             QMessageBox.information(

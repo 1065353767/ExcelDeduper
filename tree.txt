@@ -1,5 +1,4 @@
 .
-|-- Excel\310\245\326\330\271\244\276\337.spec
 |-- README.md
 |-- Repository
 |   |-- Assets
@@ -12,6 +11,7 @@
 |   |   `-- skypng.png
 |   |-- Excel
 |   `-- data
+|       |-- company_cache.db
 |       `-- settings_app.json
 |-- main.py
 |-- src
@@ -39,7 +39,8 @@
 |       |   `-- task_excel.py
 |       `-- utils
 |           |-- __init__.py
+|           |-- settings_json.py
 |           `-- util_json.py
 `-- tree.txt
 
-11 directories, 31 files
+11 directories, 32 files
