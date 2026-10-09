@@ -37,16 +37,12 @@ class MainHandlers:
         QApplication.clipboard().dataChanged.connect(self.on_clipboard_changed)
         self.ui.window_resized_signal.connect(self.on_window_resized)
 
-        # ================= 新增：初始化系统托盘 =================
         self.setup_tray_icon()
 
-    # ================= 新增：托盘系统核心方法 =================
     def setup_tray_icon(self):
-        """配置系统托盘小图标及右键菜单"""
         self.tray_icon = QSystemTrayIcon(self.ui)
-
-        # 挂载 skypng.png 为动态图标
         icon_path = os.path.join(AppConstants.ASSETS_DIR, "skypng.png")
+
         if os.path.exists(icon_path):
             custom_icon = QIcon(icon_path)
             self.tray_icon.setIcon(custom_icon)
@@ -58,7 +54,6 @@ class MainHandlers:
 
         self.tray_icon.setToolTip(f"Excel去重工具 {AppConstants.APP_VERSION}")
 
-        # 创建右键菜单
         tray_menu = QMenu()
         show_action = QAction("显示主界面", self.ui)
         quit_action = QAction("完全退出", self.ui)
@@ -67,35 +62,26 @@ class MainHandlers:
         quit_action.triggered.connect(self.quit_app)
 
         tray_menu.addAction(show_action)
-        tray_menu.addSeparator()  # 加一条分割线更美观
+        tray_menu.addSeparator()
         tray_menu.addAction(quit_action)
 
         self.tray_icon.setContextMenu(tray_menu)
-
-        # 绑定左键双击托盘图标恢复主窗口
         self.tray_icon.activated.connect(self.on_tray_activated)
-
         self.tray_icon.show()
 
     def show_main_window(self):
-        """显示并激活主窗口"""
         self.ui.show()
+        # 将窗口强制推到前台，应对 IPC 唤醒
+        self.ui.setWindowState(self.ui.windowState() & ~Qt.WindowMinimized | Qt.WindowActive)
         self.ui.activateWindow()
 
     def quit_app(self):
-        """从托盘彻底退出程序"""
-        # 1. 改变 UI 的真退出标志位，放行 closeEvent
         self.ui.real_quit = True
-        # 2. 调用 QApplication 的退出，它会自动触发 main.py 中的兜底保存配置
         QApplication.quit()
 
     def on_tray_activated(self, reason):
-        """托盘图标激活事件"""
-        # 如果是鼠标双击，则呼出主界面
         if reason == QSystemTrayIcon.ActivationReason.DoubleClick:
             self.show_main_window()
-
-    # ============================================================
 
     def on_window_resized(self, w, h):
         self.app_settings.data.window_width = w
@@ -140,11 +126,13 @@ class MainHandlers:
             return
 
         clean_text = ExcelTask.clean_company_name(text)
-
         if not clean_text:
             return
 
-        matches = ExcelDatabase.find_matching_companies(clean_text)
+        matches = ExcelDatabase.find_matching_companies(
+            clean_text,
+            tolerance=self.app_settings.data.forgive_length  # 动态注入赦免长度
+        )
         is_exist = len(matches) > 0
 
         if is_exist:
@@ -175,14 +163,18 @@ class MainHandlers:
         if self.current_toast:
             self.current_toast.close()
 
-        self.current_toast = FloatingToast(display_text, is_exist=is_exist)
-
+        self.current_toast = FloatingToast(
+            display_text,
+            is_exist=is_exist,
+            duration_ms=self.app_settings.data.toast_duration_ms  # 动态注入提示窗时间
+        )
         pos = QCursor.pos()
         self.current_toast.move(pos.x() + 20, pos.y() + 20)
         self.current_toast.show()
 
     def modify_rules(self):
-        dialog_handler = ModifyRulesHandler(self.ui)
+        # 传递 app_settings 给规则管理模块
+        dialog_handler = ModifyRulesHandler(self.ui, self.app_settings)
         dialog_handler.exec()
 
     def manage_files(self):
@@ -191,7 +183,6 @@ class MainHandlers:
 
     def change_background(self):
         items = list(self.bg_dict.keys())
-
         current_name = self.app_settings.data.current_bg_name
         current_index = items.index(current_name) if current_name in items else 0
 

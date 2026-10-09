@@ -5,10 +5,10 @@ from src.backendCode.database.app_constants import AppConstants
 
 
 class FloatingToast(QWidget):
-    def __init__(self, text, is_exist=False):
+    # ================= 新增 duration_ms 参数 =================
+    def __init__(self, text, is_exist=False, duration_ms=3000):
         super().__init__()
 
-        # 无边框 | 置顶 | 工具窗口(不显示在任务栏) | 鼠标穿透（关闭穿透以便接收点击）
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint |
             Qt.WindowType.WindowStaysOnTopHint |
@@ -22,16 +22,13 @@ class FloatingToast(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
 
         self.label = QLabel(text, self)
-
-        # =============== 新增/修改：强制开启 HTML 富文本解析 ===============
         self.label.setTextFormat(Qt.TextFormat.RichText)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        # 存在给天蓝色，不存在给红色
         if is_exist:
-            bg_color = "#87CEEB"  # 天蓝色
+            bg_color = "#87CEEB"
         else:
-            bg_color = "#f44336"  # 红色
+            bg_color = "#f44336"
 
         self.label.setStyleSheet(f"""
             QLabel {{
@@ -46,11 +43,10 @@ class FloatingToast(QWidget):
 
         layout.addWidget(self.label)
 
-        # 如果未命中，设定 3000ms 后自动关闭；命中则不开启定时器，持续显示
         if not is_exist:
-            QTimer.singleShot(AppConstants.TOAST_DURATION_NOT_FOUND_MS, self.close)
+            # ================= 使用动态时间 =================
+            QTimer.singleShot(duration_ms, self.close)
 
     def mousePressEvent(self, event):
-        """重写鼠标点击事件：用户点击提示框任意位置即可销毁它"""
         self.close()
         super().mousePressEvent(event)

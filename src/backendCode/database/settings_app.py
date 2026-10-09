@@ -11,13 +11,16 @@ from src.backendCode.utils.util_json import json2dict, dict2json
 @dataclass
 class AppSettingsData:
     current_bg_name: str = "月色海滨"
-    # ================= 新增：记录窗口宽高 =================
     window_width: int = 1280
     window_height: int = 958
-    # ====================================================
+
+    # ================= 新增：接管原 Constants 中的动态业务参数 =================
+    toast_duration_ms: int = 3000  # 提示窗时间
+    forgive_length: int = 3  # 赦免长度
+    # =========================================================================
 
 
-# 2. 全局状态管家（继承 QObject 是为了能挂载 QTimer）
+# 2. 全局状态管家
 class SettingsManager(QObject):
     def __init__(self, parent=None):
         super().__init__(parent)

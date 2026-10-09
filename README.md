@@ -16,13 +16,13 @@ tree -I ".venv|.idea|__pycache__|dist|build" > tree.txt
 **Git Bash 终端（推荐）**
 
 ```bash
-pyinstaller -y -w -p src -i "Repository/Assets/skyico.ico" -n "Excel提示重复工具_v1.0" main.py && cp -r Repository "dist/Excel提示重复工具_v1.0/"
+pyinstaller -y -w -i "Repository/Assets/skyico.ico" -n "Excel提示重复工具_v1.0" main.py && cp -r Repository "dist/Excel提示重复工具_v1.0/"
 ```
 
 **PowerShell 终端**
 
 ```powershell
-pyinstaller -y -w -p src -i "Repository/Assets/skyico.ico" -n "Excel提示重复工具_v1.0" main.py ; Copy-Item -Path "Repository" -Destination "dist\Excel提示重复工具_v1.0\Repository" -Recurse -Force
+pyinstaller -y -w -i "Repository/Assets/skyico.ico" -n "Excel提示重复工具_v1.0" main.py ; Copy-Item -Path "Repository" -Destination "dist\Excel提示重复工具_v1.0\Repository" -Recurse -Force
 ```
 
 **核心参数说明：**
