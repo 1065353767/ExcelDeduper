@@ -1,6 +1,8 @@
 import os
 import re
 import pandas as pd
+
+from backendCode.database.app_constants import AppConstants
 from src.backendCode.database.db_excel import ExcelDatabase
 
 
@@ -26,7 +28,7 @@ class ExcelTask:
     @classmethod
     def clean_company_name(cls, raw_name):
         """
-        公共清洗方法：去除前后空格、回车换行，仅保留汉字、大小写英文字母、数字，最后转全小写
+        公共清洗方法：去除前后空格、特殊符号 -> 转全小写 -> 剥离公司后缀
         供 Excel导入 与 剪贴板实时监控 共同调用
         """
         if pd.isna(raw_name) or not raw_name:
@@ -36,13 +38,26 @@ class ExcelTask:
         if not val or val.lower() == 'nan':
             return ""
 
-        # 核心修改：正则匹配，过滤掉除了(大小写字母、数字、汉字)以外的所有字符
+        # 1. 先去标点：过滤掉除了(大小写字母、数字、汉字)以外的所有字符
         val = re.sub(r'[^a-zA-Z0-9\u4e00-\u9fa5]', '', val)
 
         if not val:
             return ""
 
-        return val.lower()
+        # 2. 中间转小写：确保接下来的英文后缀比对能无视用户输入的大小写
+        val = val.lower()
+
+        # 3. 后剥离后缀：尾部后缀循环剥离逻辑
+        suffix_removed = True
+        while suffix_removed:
+            suffix_removed = False
+            for suffix in AppConstants.COMPANY_SUFFIXES:
+                if val.endswith(suffix) and len(val) > len(suffix):
+                    val = val[:-len(suffix)]
+                    suffix_removed = True
+                    break
+
+        return val
 
     @classmethod
     def execute_task(cls, file_name, excel_path, cols_input):
